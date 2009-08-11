@@ -8,8 +8,28 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
     
     typename = {}
     
+    class commandMove(QtGui.QUndoCommand):
+        def __init__(self, scene, blocklist, startpos, endpos):
+            super(BlockGraphicsScene.commandMove, self).__init__("")
+            self.blocklist = blocklist
+            self.startpos  = startpos
+            self.endpos    = endpos
+            self.scene     = scene
+        def redo(self):
+            for i,block in enumerate(self.blocklist):
+                endpos = self.endpos[i]
+                block.setPos(endpos.x(), endpos.y())
+            self.scene.updateDocks()
+
+        def undo(self):
+            for i,block in enumerate(self.blocklist):
+                startpos = self.startpos[i]
+                block.setPos(startpos.x(), startpos.y())
+            self.scene.updateDocks()
+                
     def __init__(self, parent=None):
         QtGui.QGraphicsScene.__init__(self, parent)
+        self.undostack = QtGui.QUndoStack()
         
         self.img0 = BlockView( BlockModel() )
         self.img1 = MotorBlockView( MotorBlockModel() )
@@ -34,6 +54,62 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
     def selectedBlocks(self):
         return [i for i in self.selectedItems() if issubclass(type(i), BlockView)]
         
+    def mousePressEvent(self, event):
+        QtGui.QGraphicsScene.mousePressEvent(self, event)
+        
+        block = self.itemAt( event.scenePos() )
+        if not block in [0, None]:
+            try:
+                block = block.group() or block
+            except AttributeError:
+                pass
+                
+            for i in block.getChildren(): i.setSelected(True)
+            
+            for i in self.selectedBlocks():
+                i.startpos = i.scenePos()
+            
+            for i in self.selectedBlocks():
+                for d in i.docks:
+                    if (d.destiny and not d.destiny.block.isSelected()):
+                        d.disconnect()
+        
+    def mouseReleaseEvent(self, event):
+        QtGui.QGraphicsScene.mouseReleaseEvent(self, event)
+        
+        for block in self.selectedBlocks():
+            for d in block.docks:
+                if (not d.destiny) or\
+                (d.destiny and not d.destiny.block.isSelected()):
+                    d.disconnect()
+                    l = [i for i in d.collidingItems() if isinstance(i, Dock)]
+                    for d2 in l:
+                        if d.connect(d2):
+                           k = d2.scenePos()+d2.rect.bottomLeft() - \
+                           d.scenePos()-d.rect.bottomLeft()
+                           
+                           cm = self.commandMove(self, self.selectedBlocks(),\
+                           [b.startpos     for b in self.selectedBlocks()],\
+                           [b.scenePos()+k for b in self.selectedBlocks()])
+                           
+                           self.undostack.push(cm)
+                           return
+                           
+        cm = self.commandMove(self, self.selectedBlocks(),\
+        [b.startpos   for b in self.selectedBlocks()],\
+        [b.scenePos() for b in self.selectedBlocks()])
+        self.undostack.push(cm)
+    
+    def updateDocks(self):
+        for block in self.blocks():
+            for d in block.docks:
+                d.disconnect()
+                l = [i for i in d.collidingItems() if isinstance(i, Dock)]
+                for d2 in l:
+                    if d.scenePos()+d.rect.bottomLeft() == d2.scenePos()+d2.rect.bottomLeft():
+                        d.connect(d2)
+                        break
+                            
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Delete:
             for i in self.selectedBlocks():
@@ -41,8 +117,10 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
                 self.removeItem(i)
         elif event.key() == QtCore.Qt.Key_L:
             self.load('test.sv')
-        elif event.key() == QtCore.Qt.Key_S:
-            self.save('test.sv')
+        elif event.key() == QtCore.Qt.Key_U:
+            self.undostack.undo()
+        elif event.key() == QtCore.Qt.Key_R:
+            self.undostack.redo()
             
     def save(self, f):
         a = open(f, 'w')

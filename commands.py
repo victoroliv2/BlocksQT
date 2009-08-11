@@ -17,20 +17,6 @@ class BlockView(QtGui.QGraphicsItemGroup):
     
     __model__ = BlockModel
     __image__ = "motor.png"
-    
-    class commandMove(QtGui.QUndoCommand):
-        def __init__(self, blocklist, pos):
-            QtGui.QUndoCommand.__init__("block move")
-            self.blocklist = blocklist
-            self.pos = pos
-            
-        def redo(self):
-            for i in self.blocklist:
-                i.moveBy(self.pos.x(), self.pos.y())
-
-        def undo(self):
-            for i in self.blocklist:
-                i.moveBy(-self.pos.x(), -self.pos.y())
             
     def __init__(self, model):
         QtGui.QGraphicsItemGroup.__init__(self)
@@ -70,32 +56,7 @@ class BlockView(QtGui.QGraphicsItemGroup):
             self.model.selected = value.toBool()
         return QtGui.QGraphicsItem.itemChange(self, change, value)
         
-    def mousePressEvent(self, event):
-        QtGui.QGraphicsItemGroup.mousePressEvent(self, event)
-        
-        for i in self.getChildren(): i.setSelected(True)
-        
-        for i in self.scene().selectedBlocks():
-            for d in i.docks:
-                if (d.destiny and not d.destiny.block.isSelected()):
-                    d.disconnect()
-        
-    def mouseReleaseEvent(self, event):
-        QtGui.QGraphicsItemGroup.mouseReleaseEvent(self, event)
-        
-        for block in self.scene().selectedBlocks():
-            for d in block.docks:
-                if (not d.destiny) or\
-                (d.destiny and not d.destiny.block.isSelected()):
-                    d.disconnect()
-                    l = [i for i in d.collidingItems() if isinstance(i, Dock)]
-                    for d2 in l:
-                        if d.connect(d2):
-                           k = d2.scenePos()+d2.rect.bottomLeft() - \
-                           d.scenePos()-d.rect.bottomLeft()
-                           for i in self.scene().selectedBlocks():
-                               i.moveBy(k.x(), k.y())
-                           return
+
                            
 ## custom blocks ##
                         
