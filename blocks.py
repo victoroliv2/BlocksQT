@@ -30,19 +30,7 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
     def __init__(self, parent=None):
         QtGui.QGraphicsScene.__init__(self, parent)
         self.undostack = QtGui.QUndoStack()
-        
-        self.img0 = BlockView( BlockModel() )
-        self.img1 = MotorBlockView( MotorBlockModel() )
-        self.img2 = MotorBlockView( MotorBlockModel() )
-        self.img3 = MotorBlockView( MotorBlockModel() )
-        self.img4 = MotorBlockView( MotorBlockModel() )
-        
-        self.addItem(self.img1)
-        self.addItem(self.img2)
-        self.addItem(self.img3)
-        self.addItem(self.img4)
-        self.addItem(self.img0)
-        
+                
     @staticmethod
     def register( typename ):
         BlockGraphicsScene.typename[typename.__name__] = typename
@@ -56,24 +44,26 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
         
     def mousePressEvent(self, event):
         QtGui.QGraphicsScene.mousePressEvent(self, event)
-        
-        block = self.itemAt( event.scenePos() )
-        if not block in [0, None]:
-            try:
-                block = block.group() or block
-            except AttributeError:
-                pass
-                
+        block = self.getBlock( event.scenePos() )
+        if block:
             for i in block.getChildren(): i.setSelected(True)
-            
+
             for i in self.selectedBlocks():
                 i.startpos = i.scenePos()
-            
+
             for i in self.selectedBlocks():
                 for d in i.docks:
                     if (d.destiny and not d.destiny.block.isSelected()):
                         d.disconnect()
-        
+    
+    def mouseDoubleClickEvent(self, event):
+        block = self.getBlock( event.scenePos() )
+        if block:
+            dialog = block.dialog()
+            if dialog:
+                dialog.exec_()
+                block.updateModel()
+                
     def mouseReleaseEvent(self, event):
         QtGui.QGraphicsScene.mouseReleaseEvent(self, event)
         
@@ -99,7 +89,16 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
         [b.startpos   for b in self.selectedBlocks()],\
         [b.scenePos() for b in self.selectedBlocks()])
         self.undostack.push(cm)
-    
+        
+    def getBlock(self, pos):
+        block = self.itemAt( pos )
+        if not block in [0, None]:
+            try:
+                block = block.group() or block
+            except AttributeError:
+                block = None
+        return block
+        
     def updateDocks(self):
         for block in self.blocks():
             for d in block.docks:
@@ -109,7 +108,7 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
                     if d.scenePos()+d.rect.bottomLeft() == d2.scenePos()+d2.rect.bottomLeft():
                         d.connect(d2)
                         break
-                            
+                        
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Delete:
             for i in self.selectedBlocks():
@@ -117,12 +116,15 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
                 self.removeItem(i)
         elif event.key() == QtCore.Qt.Key_L:
             self.load('test.sv')
+        elif event.key() == QtCore.Qt.Key_S:
+            self.save('test.sv')
         elif event.key() == QtCore.Qt.Key_U:
             self.undostack.undo()
         elif event.key() == QtCore.Qt.Key_R:
             self.undostack.redo()
             
     def save(self, f):
+        print 'save'
         a = open(f, 'w')
         l = []
         for i in self.blocks():
@@ -132,11 +134,13 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
         a.close()
     
     def load(self, f):
+        print 'load'
         self.clear()
         a = open(f, 'r')
         l = pickle.load(a)
         for t,m in l:
-            block = t(m)
+            block = t()
+            block.setModel(m)
             self.addItem(block)
         a.close()
         
@@ -244,14 +248,32 @@ class MainWindow(QtGui.QMainWindow):
         blist = BlockListWidget()
         blist.addBlock( BlockView )
         blist.addBlock( MotorBlockView )
+        blist.setSizePolicy( QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Ignored )
         
         BlockGraphicsScene.register( BlockView )
         BlockGraphicsScene.register( MotorBlockView )
         
-        dt = BlockGraphicsView()
+        bv = BlockGraphicsView()
         
+        img0 = BlockView()
+        img0.setModel(BlockModel())
+        img1 = MotorBlockView()
+        img1.setModel(MotorBlockModel())
+        img2 = MotorBlockView()
+        img2.setModel(MotorBlockModel())
+        img3 = MotorBlockView()
+        img3.setModel(MotorBlockModel())
+        img4 = MotorBlockView()
+        img4.setModel(MotorBlockModel())
+        
+        bv.scene.addItem(img1)
+        bv.scene.addItem(img2)
+        bv.scene.addItem(img3)
+        bv.scene.addItem(img4)
+        bv.scene.addItem(img0)
+
         frameLayout.addWidget(blist)
-        frameLayout.addWidget(dt)
+        frameLayout.addWidget(bv)
         self.setCentralWidget(frame)
         
 app = QtGui.QApplication(sys.argv)

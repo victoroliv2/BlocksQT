@@ -14,9 +14,9 @@ class Dock(QtGui.QGraphicsRectItem):
     def __init__(self, block, rect, type, format, flow):
         QtGui.QGraphicsRectItem.__init__(self, rect)
         
-        b = QtGui.QBrush(QtGui.QColor(255,255,255))
-        self.setBrush(b)
-        #self.setOpacity(0)
+        #b = QtGui.QBrush(QtGui.QColor(255,255,255))
+        #self.setBrush(b)
+        self.setOpacity(0)
         
         self.destiny = None
         self.enabled = True
@@ -39,9 +39,9 @@ class Dock(QtGui.QGraphicsRectItem):
     def connect(self, dock2):
         if self.can_connect(dock2):
             
-            b = QtGui.QBrush(QtGui.QColor(255,0,0))
-            self.setBrush(b)
-            dock2.setBrush(b)
+            #b = QtGui.QBrush(QtGui.QColor(255,0,0))
+            #self.setBrush(b)
+            #ock2.setBrush(b)
             
             self.destiny = dock2
             self.enabled = False
@@ -60,9 +60,9 @@ class Dock(QtGui.QGraphicsRectItem):
             self.destiny.destiny = None
             self.destiny.enabled = True
             
-            self.destiny.setBrush(b)
+            #self.destiny.setBrush(b)
         
-        self.setBrush(b)
+        #self.setBrush(b)
         
         self.destiny = None
         self.enabled = True
