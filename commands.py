@@ -106,7 +106,7 @@ class MotorBlockView(BlockView):
         self.label = QtGui.QGraphicsSimpleTextItem()
         self.label.setPos(self.boundingRect().width()/2, \
                               self.boundingRect().height()/2)
-        self.addToGroup( self.label )
+        #self.addToGroup( self.label )
         self.label.setZValue(1)
         
     def setModel(self, model):

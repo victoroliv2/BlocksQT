@@ -165,7 +165,8 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
             stream >> s
             blockview = BlockGraphicsScene.typename[str(s)]
             
-            b = blockview( blockview.__model__() )
+            b = blockview()
+            b.setModel( blockview.__model__() )
             b.setPos( event.scenePos() )
             self.addItem( b )
             
