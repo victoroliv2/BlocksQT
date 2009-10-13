@@ -26,6 +26,8 @@ class BlockView(QtGui.QGraphicsItemGroup):
         self.setFlags(QtGui.QGraphicsItem.ItemIsMovable | \
                           QtGui.QGraphicsItem.ItemIsSelectable | \
                           QtGui.QGraphicsItem.ItemIsFocusable)
+                
+        self.startpos = self.scenePos()
         
     #overload this method
     def setModel(self, model):
@@ -104,9 +106,7 @@ class MotorBlockView(BlockView):
         self.addDock(self.dock_child)
         
         self.label = QtGui.QGraphicsSimpleTextItem()
-        self.label.setPos(self.boundingRect().width()/2, \
-                              self.boundingRect().height()/2)
-        #self.addToGroup( self.label )
+        self.addToGroup( self.label )
         self.label.setZValue(1)
         
     def setModel(self, model):
@@ -122,7 +122,15 @@ class MotorBlockView(BlockView):
         for i,k in enumerate(self.model.motors):
             if k: s += chr(ord('a')+i)
         self.label.setText(s)
-
+        
+        lw,lh = self.label.boundingRect().width(), \
+            self.label.boundingRect().height()
+        
+        w,h = self.boundingRect().width(), \
+            self.boundingRect().height()
+        
+        self.label.setPos(w/2-lw/2, h/2-lh/2)
+        
     def dialog(self):
         d = QtGui.QDialog()
         buttonBox = \
@@ -132,7 +140,7 @@ class MotorBlockView(BlockView):
         buttonBox.accepted.connect(d.accept)
         buttonBox.rejected.connect(d.reject)
         
-        chkbox = [QtGui.QCheckBox()\
+        chkbox = [QtGui.QCheckBox(chr(ord('A')+i))\
                       for i in\
                       range(self.model.__number_motors__)]
         mainLayout = QtGui.QVBoxLayout()

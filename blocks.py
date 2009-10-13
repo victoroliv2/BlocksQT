@@ -30,7 +30,7 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
     def __init__(self, parent=None):
         QtGui.QGraphicsScene.__init__(self, parent)
         self.undostack = QtGui.QUndoStack()
-                
+        
     @staticmethod
     def register( typename ):
         BlockGraphicsScene.typename[typename.__name__] = typename
