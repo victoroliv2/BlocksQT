@@ -4,7 +4,7 @@ from PyQt4 import QtGui, QtCore
 from dock import Dock
 
 class BlockModel(object):
-    def __init__(self,imagefile="pattern.png",x=0,y=0,selected=False):
+    def __init__(self,imagefile="",x=0,y=0,selected=False):
         self.x = x
         self.y = y
         self.selected = selected
