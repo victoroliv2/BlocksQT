@@ -15,6 +15,7 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
             self.startpos  = startpos
             self.endpos    = endpos
             self.scene     = scene
+
         def redo(self):
             for i,block in enumerate(self.blocklist):
                 endpos = self.endpos[i]
@@ -30,30 +31,35 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
     def __init__(self, parent=None):
         QtGui.QGraphicsScene.__init__(self, parent)
         self.undostack = QtGui.QUndoStack()
-        
+        self.moving    = False
+
     @staticmethod
     def register( typename ):
         BlockGraphicsScene.typename[typename.__name__] = typename
         BlockGraphicsScene.typename[typename] = typename.__name__
-        
+
     def blocks(self):
         return [i for i in self.items() if issubclass(type(i), BlockView)]
         
     def selectedBlocks(self):
-        return [i for i in self.selectedItems() if issubclass(type(i), BlockView)]
+        return [b for b in self.blocks() if b.selected]
         
     def mousePressEvent(self, event):
         QtGui.QGraphicsScene.mousePressEvent(self, event)
         block = self.getBlock( event.scenePos() )
+
+        for i in self.blocks(): i.selected = False
+
         if block:
-            for i in block.getChildren(): i.setSelected(True)
+            self.moving = True
+            for i in block.getChildren(): i.selected = True
 
             for i in self.selectedBlocks():
                 i.startpos = i.scenePos()
 
             for i in self.selectedBlocks():
                 for d in i.docks:
-                    if (d.destiny and not d.destiny.block.isSelected()):
+                    if (d.destiny and not d.destiny.block.selected):
                         d.disconnect()
     
     def mouseDoubleClickEvent(self, event):
@@ -64,13 +70,21 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
                 dialog.exec_()
                 block.updateModel()
                 
+    def mouseMoveEvent(self, event):
+        change = event.scenePos() - event.lastScenePos()
+        if self.moving:
+            for block in self.selectedBlocks():
+                block.moveBy(change.x(), change.y())
+        
     def mouseReleaseEvent(self, event):
         QtGui.QGraphicsScene.mouseReleaseEvent(self, event)
         
+        self.moving = False
+
         for block in self.selectedBlocks():
             for d in block.docks:
                 if (not d.destiny) or\
-                (d.destiny and not d.destiny.block.isSelected()):
+                (d.destiny and not d.destiny.block.selected):
                     d.disconnect()
                     l = [i for i in d.collidingItems() if isinstance(i, Dock)]
                     for d2 in l:
@@ -181,7 +195,7 @@ class BlockGraphicsView(QtGui.QGraphicsView):
         self.scene = BlockGraphicsScene(self)
         self.setScene(self.scene)
         
-        self.setDragMode(QtGui.QGraphicsView.RubberBandDrag)
+        self.setDragMode(QtGui.QGraphicsView.NoDrag)
         self.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
         self.scale (1.5, 1.5)
         back = QtGui.QBrush(QtGui.QColor(128,128,128), QtCore.Qt.NoBrush)

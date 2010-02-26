@@ -4,45 +4,61 @@ from PyQt4 import QtGui, QtCore
 from dock import Dock
 
 class BlockModel(object):
-    def __init__(self,imagefile="",x=0,y=0,selected=False):
+    def __init__(self,imagefile="",x=0,y=0):
         self.x = x
         self.y = y
-        self.selected = selected
         self.imagefile = imagefile
         
     def code(self):
         raise NotImplementedError
         
+def pixmap_select(imgfile):
+    img = QtGui.QImage(imgfile)
+    img.invertPixels()
+    return QtGui.QPixmap.fromImage(img)
+
 class BlockView(QtGui.QGraphicsItemGroup):
     
     __model__ = BlockModel
     __image__ = "motor.png"
-            
+
     def __init__(self):
         QtGui.QGraphicsItemGroup.__init__(self)
         
         self.docks = []
         
-        self.setFlags(QtGui.QGraphicsItem.ItemIsMovable | \
-                          QtGui.QGraphicsItem.ItemIsSelectable | \
-                          QtGui.QGraphicsItem.ItemIsFocusable)
+        self.setFlags(QtGui.QGraphicsItem.ItemIsFocusable)
                 
         self.startpos = self.scenePos()
-        
+        self._selected = False
+
+    @property
+    def selected(self):
+        return self._selected
+
+    @selected.setter
+    def selected(self, v):
+        if v:
+            self.pixitem.setPixmap(self.pixmap_y)
+        else:
+            self.pixitem.setPixmap(self.pixmap_n)
+
+        self._selected = v
+
     #overload this method
     def setModel(self, model):
         self.model  = model
-        self.pixitem = QtGui.QGraphicsPixmapItem( QtGui.QPixmap(model.imagefile) )
+        self.pixmap_y = pixmap_select(model.imagefile)
+        self.pixmap_n = QtGui.QPixmap(model.imagefile)
+        self.pixitem = QtGui.QGraphicsPixmapItem(self.pixmap_n)
         self.addToGroup( self.pixitem )
         self.setPos( QtCore.QPointF(model.x, model.y) )
-        self.setSelected(model.selected)
         
     #overload this method
     def updateModel(self):
         model = self.model
         self.pixitem.setPixmap( QtGui.QPixmap(model.imagefile) )
         self.setPos( QtCore.QPointF(model.x, model.y) )
-        self.setSelected(model.selected)
         
     #overload this method
     def dialog(self):
