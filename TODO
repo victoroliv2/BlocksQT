@@ -1,0 +1,35 @@
+[X] block model/view architecture
+[X] logo code generation
+[X] block save
+[X] block canvas
+[X] undo/redo framework
+[ ] all blocks
+    [ ] newprocedure
+    [ ] procedure
+    [ ] null
+    [ ] vertical null
+    [ ] horizontal null
+    [ ] start
+    [ ] resett
+    [ ] beep, ledon, ledoff
+    [ ] wait
+    [ ] on, off, brake, thisway, thatway, reverse,
+    [ ] onfor, setpower
+    [ ] servo
+    [ ] if
+    [ ] if else
+    [ ] wait until
+    [ ] repeat
+    [ ] loop
+    [ ] stop
+    [ ] end procedure
+    [ ] comparison
+    [ ] and, or, xor, not
+    [ ] sensor
+    [ ] switch
+    [ ] timer, number, time, random
+    [ ] set variable, variable
+    [ ] add, sub, mult, div, mod
+    [ ] comment
+[ ] Internacionalization
+[ ] integrate with gogoboard communication API

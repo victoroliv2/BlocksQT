@@ -74,7 +74,26 @@ class BlockView(QtGui.QGraphicsItemGroup):
         return QtGui.QGraphicsItem.itemChange(self, change, value)
         
 
-                           
+## custom widgets ##
+
+class BlockTextItem(QtGui.QGraphicsSimpleTextItem):
+    def __init__(self, block=None, centralized=False):
+        QtGui.QGraphicsSimpleTextItem.__init__(self)
+        self.block = block
+        self.centralized = centralized
+
+    def setText(self, t):
+        QtGui.QGraphicsSimpleTextItem.setText(self, t)
+
+        if self.centralized:
+            lw,lh = self.boundingRect().width(), \
+                self.boundingRect().height()
+
+            w,h = self.block.boundingRect().width(), \
+                self.block.boundingRect().height()
+
+            self.setPos(w/2-lw/2, h/2-lh/2)
+        
 ## custom blocks ##
                         
 class MotorBlockModel(BlockModel):
@@ -105,7 +124,7 @@ class MotorBlockView(BlockView):
         Dock.type.NORMAL, Dock.format.MASC, Dock.flow.TO_CHILD )
         self.addDock(self.dock_child)
         
-        self.label = QtGui.QGraphicsSimpleTextItem()
+        self.label = BlockTextItem(self, True)
         self.addToGroup( self.label )
         self.label.setZValue(1)
         
@@ -122,15 +141,7 @@ class MotorBlockView(BlockView):
         for i,k in enumerate(self.model.motors):
             if k: s += chr(ord('a')+i)
         self.label.setText(s)
-        
-        lw,lh = self.label.boundingRect().width(), \
-            self.label.boundingRect().height()
-        
-        w,h = self.boundingRect().width(), \
-            self.boundingRect().height()
-        
-        self.label.setPos(w/2-lw/2, h/2-lh/2)
-        
+
     def dialog(self):
         d = QtGui.QDialog()
         buttonBox = \
@@ -143,6 +154,7 @@ class MotorBlockView(BlockView):
         chkbox = [QtGui.QCheckBox(chr(ord('A')+i))\
                       for i in\
                       range(self.model.__number_motors__)]
+        [c.setChecked(self.model.motors[i]) for i,c in enumerate(chkbox)]
         mainLayout = QtGui.QVBoxLayout()
         
         def update(i):
