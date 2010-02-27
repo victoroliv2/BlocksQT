@@ -31,7 +31,9 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
     def __init__(self, parent=None):
         QtGui.QGraphicsScene.__init__(self, parent)
         self.undostack = QtGui.QUndoStack()
-        self.moving    = False
+        self.moving = False
+        self.box = QtGui.QGraphicsRectItem(0, 0, 0, 0, scene=self)
+        self.box.setVisible(False)
 
     @staticmethod
     def register( typename ):
@@ -48,11 +50,11 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
         QtGui.QGraphicsScene.mousePressEvent(self, event)
         block = self.getBlock( event.scenePos() )
 
-        for i in self.blocks(): i.selected = False
-
         if block:
             self.moving = True
-            for i in block.getChildren(): i.selected = True
+            if not block.selected:
+                for i in self.blocks(): i.selected = False
+                for i in block.getChildren(): i.selected = True
 
             for i in self.selectedBlocks():
                 i.startpos = i.scenePos()
@@ -61,7 +63,12 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
                 for d in i.docks:
                     if (d.destiny and not d.destiny.block.selected):
                         d.disconnect()
-    
+        else:
+            for i in self.blocks(): i.selected = False
+            self.box.setVisible(True)
+            self.box.setRect(event.scenePos().x(), event.scenePos().y(),
+                             0, 0)
+
     def mouseDoubleClickEvent(self, event):
         block = self.getBlock( event.scenePos() )
         if block:
@@ -75,11 +82,25 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
         if self.moving:
             for block in self.selectedBlocks():
                 block.moveBy(change.x(), change.y())
-        
+
+        if self.box.isVisible():
+            rect = self.box.rect()
+            rect.setWidth(rect.width()+change.x())
+            rect.setHeight(rect.height()+change.y())
+            self.box.setRect(rect)
+
     def mouseReleaseEvent(self, event):
         QtGui.QGraphicsScene.mouseReleaseEvent(self, event)
         
         self.moving = False
+
+        if self.box.isVisible():
+            for b in  [i for i in self.box.collidingItems() if
+                       issubclass(type(i), BlockView) and \
+                      i.pixitem.collidesWithItem(self.box)]:
+                b.selected = True
+            self.box.setVisible(False)
+            return
 
         for block in self.selectedBlocks():
             for d in block.docks:
