@@ -76,7 +76,8 @@ class BlockGraphicsScene(QtGui.QGraphicsScene):
             if dialog:
                 dialog.exec_()
                 block.updateModel()
-                
+                block.selected = True
+
     def mouseMoveEvent(self, event):
         change = event.scenePos() - event.lastScenePos()
         if self.moving:
